@@ -2,3 +2,9 @@
 temp/
 artifact/
 Manifest.toml
+benchmark/Manifest.toml
+docs/Manifest.toml
+benchmark/data/
+benchmark/results/
+profiling/Manifest.toml
+profiling/results/
