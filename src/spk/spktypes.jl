@@ -52,6 +52,31 @@ Abstract type for all SPK segment type caches.
 """
 abstract type AbstractSPKCache end 
 
+struct ThreadCache{T}
+    single::T
+    multi::Vector{T}
+end
+
+@inline cache_slots() = isdefined(Threads, :maxthreadid) ? max(1, Threads.maxthreadid()) : max(1, Threads.nthreads())
+@inline function build_thread_cache(factory::F) where {F}
+    first_cache = factory()
+    T = typeof(first_cache)
+
+    if cache_slots() == 1
+        return ThreadCache{T}(first_cache, T[])
+    end
+
+    caches = Vector{T}(undef, cache_slots())
+    caches[1] = first_cache
+    @inbounds for idx in 2:length(caches)
+        caches[idx] = factory()
+    end
+
+    return ThreadCache{T}(first_cache, caches)
+end
+
+@inline thread_cache(cache::ThreadCache) = isempty(cache.multi) ? cache.single : @inbounds cache.multi[Threads.threadid()]
+
 
 # ----------------------------------
 # SPK TYPE 1
@@ -135,11 +160,11 @@ principal trajectory integrator DPTRAJ.
 """
 struct SPKSegmentType1 <: AbstractSPKSegment
     head::SPKSegmentHeader1
-    cache::Vector{SPKSegmentCache1}
+    cache::ThreadCache{SPKSegmentCache1}
 end
 
 @inline header(spk::SPKSegmentType1) = spk.head 
-@inline @inbounds cache(spk::SPKSegmentType1) = spk.cache[Threads.threadid()]
+@inline cache(spk::SPKSegmentType1) = thread_cache(spk.cache)
 
 
 # ----------------------------------
@@ -209,11 +234,11 @@ is normally used for planet barycenters, and for satellites whose ephemerides ar
 """
 struct SPKSegmentType2 <: AbstractSPKSegment
     head::SPKSegmentHeader2
-    cache::Vector{SPKSegmentCache2}
+    cache::ThreadCache{SPKSegmentCache2}
 end
 
 @inline header(spk::SPKSegmentType2) = spk.head 
-@inline @inbounds cache(spk::SPKSegmentType2) = spk.cache[Threads.threadid()]
+@inline cache(spk::SPKSegmentType2) = thread_cache(spk.cache)
 
 
 # ----------------------------------
@@ -275,11 +300,11 @@ Segment instance for SPK segments of type 5.
 """
 struct SPKSegmentType5 <: AbstractSPKSegment
     head::SPKSegmentHeader5
-    cache::Vector{SPKSegmentCache5}
+    cache::ThreadCache{SPKSegmentCache5}
 end
 
 @inline header(spk::SPKSegmentType5) = spk.head 
-@inline @inbounds cache(spk::SPKSegmentType5) = spk.cache[Threads.threadid()]
+@inline cache(spk::SPKSegmentType5) = thread_cache(spk.cache)
 
 
 # ----------------------------------
@@ -343,11 +368,11 @@ Segment instance for SPK segments of type 8 and 12.
 """
 struct SPKSegmentType8 <: AbstractSPKSegment
     head::SPKSegmentHeader8
-    cache::Vector{SPKSegmentCache8}
+    cache::ThreadCache{SPKSegmentCache8}
 end
 
 @inline header(spk::SPKSegmentType8) = spk.head 
-@inline @inbounds cache(spk::SPKSegmentType8) = spk.cache[Threads.threadid()]
+@inline cache(spk::SPKSegmentType8) = thread_cache(spk.cache)
 
 
 # ----------------------------------
@@ -415,11 +440,11 @@ Segment instance for SPK segments of type 9 and 13.
 """
 struct SPKSegmentType9 <: AbstractSPKSegment
     head::SPKSegmentHeader9
-    cache::Vector{SPKSegmentCache9}
+    cache::ThreadCache{SPKSegmentCache9}
 end
 
 @inline header(spk::SPKSegmentType9) = spk.head 
-@inline @inbounds cache(spk::SPKSegmentType9) = spk.cache[Threads.threadid()]
+@inline cache(spk::SPKSegmentType9) = thread_cache(spk.cache)
 
 
 # ----------------------------------
@@ -471,11 +496,11 @@ Segment instance for SPK segments of type 14.
 """
 struct SPKSegmentType14 <: AbstractSPKSegment 
     head::SPKSegmentHeader14 
-    cache::Vector{SPKSegmentCache2}
+    cache::ThreadCache{SPKSegmentCache2}
 end
 
 @inline header(spk::SPKSegmentType14) = spk.head 
-@inline @inbounds cache(spk::SPKSegmentType14) = spk.cache[Threads.threadid()]
+@inline cache(spk::SPKSegmentType14) = thread_cache(spk.cache)
 
 
 # ----------------------------------
@@ -535,11 +560,11 @@ Segment instance for SPK segments of type 15.
 """
 struct SPKSegmentType15 <: AbstractSPKSegment
     head::SPKSegmentHeader15
-    cache::Vector{TwoBodyUniversalCache}
+    cache::ThreadCache{TwoBodyUniversalCache}
 end
 
 @inline header(spk::SPKSegmentType15) = spk.head 
-@inline @inbounds cache(spk::SPKSegmentType15) = spk.cache[Threads.threadid()]
+@inline cache(spk::SPKSegmentType15) = thread_cache(spk.cache)
 
 
 # ----------------------------------
@@ -719,11 +744,11 @@ special cases of a type 19 with a single mini-segment.
 """
 struct SPKSegmentType19 <: AbstractSPKSegment
     head::SPKSegmentHeader19
-    cache::Vector{SPKSegmentCache19}
+    cache::ThreadCache{SPKSegmentCache19}
 end
 
 @inline header(spk::SPKSegmentType19) = spk.head 
-@inline @inbounds cache(spk::SPKSegmentType19) = spk.cache[Threads.threadid()]
+@inline cache(spk::SPKSegmentType19) = thread_cache(spk.cache)
 
 
 # ----------------------------------
@@ -793,11 +818,11 @@ used for planet barycenters, and for satellites whose ephemerides are integrated
 """
 struct SPKSegmentType20 <: AbstractSPKSegment
     head::SPKSegmentHeader20
-    cache::Vector{SPKSegmentCache20}
+    cache::ThreadCache{SPKSegmentCache20}
 end
 
 @inline header(spk::SPKSegmentType20) = spk.head 
-@inline @inbounds cache(spk::SPKSegmentType20) = spk.cache[Threads.threadid()]
+@inline cache(spk::SPKSegmentType20) = thread_cache(spk.cache)
 
 
 """

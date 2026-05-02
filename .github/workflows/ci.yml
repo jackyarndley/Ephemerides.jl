@@ -51,18 +51,8 @@ jobs:
       - uses: julia-actions/setup-julia@v1
         with:
           version: '1'
-      - run: |
-          julia --color=yes --project=docs -e '
-            import Pkg; Pkg.add("Documenter")
-            using Pkg
-            Pkg.develop(PackageSpec(path=pwd()))
-            Pkg.instantiate()'
-      - run: |
-          julia --color=yes --project=docs -e '
-            import Pkg; Pkg.add("Documenter")
-            using Documenter: doctest
-            using Ephemerides
-            doctest(Ephemerides)'
+      - run: julia --color=yes --project=docs -e 'using Pkg; Pkg.develop(PackageSpec(path=pwd())); Pkg.instantiate()'
+      - run: julia --color=yes --project=docs -e 'using Documenter: doctest; using Ephemerides; doctest(Ephemerides)'
       - run: julia --project=docs --color=yes docs/make.jl
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

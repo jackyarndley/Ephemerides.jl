@@ -129,7 +129,7 @@ function SPKSegmentType19(daf::DAF, desc::DAFSegmentDescriptor)
 
     # Initialise the segment header and cache
     header = SPKSegmentHeader19(daf, desc)
-    caches = [SPKSegmentCache19(daf, header) for _ in 1:Threads.nthreads()]
+    caches = build_thread_cache(() -> SPKSegmentCache19(daf, header))
 
     SPKSegmentType19(header, caches)
 

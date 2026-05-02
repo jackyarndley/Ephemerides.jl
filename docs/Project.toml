@@ -1,0 +1,6 @@
+[deps]
+Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
+Ephemerides = "6a9c3322-c8fe-4c26-8ad6-14a6f8acd2a0"
+
+[sources]
+Ephemerides = {path = ".."}

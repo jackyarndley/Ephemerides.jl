@@ -110,7 +110,7 @@ function SPKSegmentType15(daf::DAF, desc::DAFSegmentDescriptor)
     vel = vp*vcross(head.tp, head.pa)
 
     # Initialise the two-body caches
-    caches = [TwoBodyUniversalCache(head.GM, pos, vel) for _ in 1:Threads.nthreads()]
+    caches = build_thread_cache(() -> TwoBodyUniversalCache(head.GM, pos, vel))
     SPKSegmentType15(head, caches)
 
 end

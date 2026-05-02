@@ -60,8 +60,8 @@ function SPKSegmentCache1(head::SPKSegmentHeader1)
     SPKSegmentCache1(
         0.0, zeros(head.maxdim), zeros(3), zeros(3), zeros(head.maxdim, 3), 
         0, zeros(Int, 3), -1, 
-        DiffCache(zeros(head.maxdim-1)), DiffCache(zeros(head.maxdim-2)), 
-        DiffCache(zeros(head.maxdim+2)), DiffCache(zeros(3))
+        DiffCache(zeros(head.maxdim-1), 7), DiffCache(zeros(head.maxdim-2), 7), 
+        DiffCache(zeros(head.maxdim+2), 7), DiffCache(zeros(3), 7)
     )
 end
 
@@ -73,7 +73,7 @@ Create the object representing an SPK segment of type 1.
 function SPKSegmentType1(daf::DAF, desc::DAFSegmentDescriptor)
 
     header = SPKSegmentHeader1(daf, desc)
-    caches = [SPKSegmentCache1(header) for _ in 1:Threads.nthreads()]
+    caches = build_thread_cache(() -> SPKSegmentCache1(header))
 
     SPKSegmentType1(header, caches)
 
@@ -83,37 +83,43 @@ end
 
 function spk_vector3(daf::DAF, seg::SPKSegmentType1, time::Number) 
     
+    head = header(seg)
+    data = cache(seg)
+
     # Find the logical record containing the MDA coefficients at `time`
-    index = find_logical_record(daf, header(seg), time)
+    index = find_logical_record(daf, head, time)
     
     # Retrieve the MDA coefficients 
-    get_coefficients!(daf, header(seg), cache(seg), index)
+    get_coefficients!(daf, head, data, index)
 
-    Δ = time - cache(seg).tl
+    Δ = time - data.tl
 
     # Compute MDA position coefficients
-    compute_mda_pos_coefficients!(cache(seg), Δ)
-    return compute_mda_position(cache(seg), Δ)
+    compute_mda_pos_coefficients!(data, Δ)
+    return compute_mda_position(data, Δ)
     
 end
 
 
 function spk_vector6(daf::DAF, seg::SPKSegmentType1, time::Number)
+    head = header(seg)
+    data = cache(seg)
+
     # Find the logical record containing the MDA coefficients at `time`
-    index = find_logical_record(daf, header(seg), time)
+    index = find_logical_record(daf, head, time)
     
     # Retrieve the MDA coefficients 
-    get_coefficients!(daf, header(seg), cache(seg), index)
+    get_coefficients!(daf, head, data, index)
   
-    Δ = time - cache(seg).tl
+    Δ = time - data.tl
 
     # Compute MDA position coefficients
-    compute_mda_pos_coefficients!(cache(seg), Δ)
-    pos = compute_mda_position(cache(seg), Δ)
+    compute_mda_pos_coefficients!(data, Δ)
+    pos = compute_mda_position(data, Δ)
 
     # Compute MDA velocity coefficients
-    compute_mda_vel_coefficients!(cache(seg), Δ)
-    vel = compute_mda_velocity(cache(seg), Δ)
+    compute_mda_vel_coefficients!(data, Δ)
+    vel = compute_mda_velocity(data, Δ)
 
     return @inbounds SVector{6}(
         pos[1], pos[2], pos[3], 
@@ -296,8 +302,8 @@ end
 
 # This function is such that the output ks = 0
 @inbounds function compute_mda_vel_coefficients!(cache::SPKSegmentCache1, Δ::Number)
-
-    for j = 1:cache.kqmax
+ 
+    for j = 1:(cache.kqmax - 2)
         get_tmp(cache.w, Δ)[j+1] = get_tmp(cache.fc, Δ)[j+1]*get_tmp(cache.w, Δ)[j] - get_tmp(cache.wc, Δ)[j]*get_tmp(cache.w, Δ)[j+1]
     end
     

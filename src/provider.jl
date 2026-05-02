@@ -48,7 +48,7 @@ end
 function Base.show(io::IO, ::MIME"text/plain", eph::EphemerisProvider)
     println(io, eph, ":")
     for daf in get_daf(eph)
-        println(io, " $(repr(filepath(daf)))")
+        println(io, " \"", filepath(daf), "\"")
     end
 end
 

@@ -12,7 +12,7 @@ end
 Create an `InterpCache` instance of type `T` with `len` buffers, each of size `buffsize`.
 """
 function InterpCache{T}(len::Int, buffsize::Int) where T
-    return InterpCache{T}([DiffCache(zeros(T, buffsize)) for _ in 1:len])
+    return InterpCache{T}([DiffCache(zeros(T, buffsize), 7) for _ in 1:len])
 end
 
 # Julia APIs 

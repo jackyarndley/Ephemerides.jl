@@ -66,7 +66,7 @@ function SPKSegmentType5(daf::DAF, desc::DAFSegmentDescriptor)
 
     # Initialise the segment header and cache
     header = SPKSegmentHeader5(daf, desc)
-    caches = [SPKSegmentCache5(header) for _ in 1:Threads.nthreads()]
+    caches = build_thread_cache(() -> SPKSegmentCache5(header))
 
     SPKSegmentType5(header, caches)
 

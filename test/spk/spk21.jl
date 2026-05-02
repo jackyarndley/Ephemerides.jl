@@ -2,6 +2,48 @@
 test_dir = artifact"testdata"
 DJ2000 = 2451545
 
+function reference_spk1_velocity(g, dt, refvel, Δ, kqmax, kq)
+    fc = zeros(length(g) - 1)
+    wc = zeros(length(g) - 2)
+    w = zeros(length(g) + 2)
+
+    tp = Δ
+    mq2 = kqmax - 2
+    ks = kqmax - 1
+
+    fc[1] = 1.0
+    for j in 1:mq2
+        fc[j+1] = tp / g[j]
+        wc[j] = Δ / g[j]
+        tp = Δ + g[j]
+    end
+
+    for j in 1:kqmax
+        w[j] = 1 / j
+    end
+
+    jx = 0
+    ks1 = ks - 1
+    while ks >= 2
+        jx += 1
+        for j in 1:jx
+            w[j+ks] = fc[j+1] * w[j+ks1] - wc[j] * w[j+ks]
+        end
+        ks = ks1
+        ks1 -= 1
+    end
+
+    for j in 1:jx
+        w[j+ks] = fc[j+1] * w[j] - wc[j] * w[j+ks]
+    end
+
+    return @inbounds [
+        refvel[1] + Δ * sum(dt[j, 1] * w[j] for j in kq[1]:-1:1),
+        refvel[2] + Δ * sum(dt[j, 2] * w[j] for j in kq[2]:-1:1),
+        refvel[3] + Δ * sum(dt[j, 3] * w[j] for j in kq[3]:-1:1),
+    ]
+end
+
 @testset "SPK Type 21" verbose=true begin 
     
     # These kernels are tested against SPICE because CALCEPH performs erroneous 
@@ -94,4 +136,22 @@ DJ2000 = 2451545
 
     end
 
+end
+
+@testset "SPK Type 21 velocity coefficient regression" begin
+    head = Ephemerides.SPKSegmentHeader1(1, 0, [0.0], 1, 1, 1, 20)
+    cache = Ephemerides.SPKSegmentCache1(head)
+
+    cache.g .= 2.0:21.0
+    cache.refvel .= (1.0, -2.0, 3.0)
+    cache.dt .= reshape(collect(1.0:60.0), 20, 3)
+    cache.kqmax = 19
+    cache.kq .= (19, 18, 17)
+
+    Δ = 0.25
+    Ephemerides.compute_mda_pos_coefficients!(cache, Δ)
+    @test_nowarn Ephemerides.compute_mda_vel_coefficients!(cache, Δ)
+
+    expected = reference_spk1_velocity(cache.g, cache.dt, cache.refvel, Δ, cache.kqmax, cache.kq)
+    @test Ephemerides.compute_mda_velocity(cache, Δ) ≈ expected atol=1e-14 rtol=1e-14
 end

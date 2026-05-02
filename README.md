@@ -74,6 +74,21 @@ angles = ephem_rotation3(eph, 1, 31006, time)
 ## Documentation 
 For further information on this package please refer to the [stable documentation](https://juliaspacemissiondesign.github.io/Ephemerides.jl/stable/)
 
+## Benchmarking
+BenchmarkTools-based scripts for this fork live in `benchmark\`. Running:
+
+```julia
+julia --startup-file=no benchmark\runbenchmarks.jl
+```
+
+downloads DE440 and the matching Moon PA440 kernel on demand, exercises representative position and rotation workloads, and writes a JSON results file to `benchmark\results\latest.json`.
+
+For CPU profiling of broader DE440 position sweeps and PA440 rotation sweeps:
+
+```julia
+julia --startup-file=no profiling\runprofiles.jl
+```
+
 ## Support
 If you found this package useful, please consider starring the repository. We also encourage 
 you to take a look at other astrodynamical packages of the [JSMD](https://github.com/JuliaSpaceMissionDesign/) organisation.
