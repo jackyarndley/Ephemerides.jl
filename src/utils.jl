@@ -6,7 +6,7 @@ DAF record length, in bytes.
 ### References
 - [DAF Required Reading](https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/C/req/daf.html)
 """
-const DAF_RECORD_LENGTH = 1024; 
+const DAF_RECORD_LENGTH = 1024;
 
 
 """
@@ -19,7 +19,7 @@ Retrieve a whole DAF record at position `index`.
 end
 
 
-# Parsing Utils 
+# Parsing Utils
 # =====================
 
 """
@@ -34,7 +34,7 @@ function is_little_endian(array::Vector{UInt8})
         return true
     elseif endian == "BIG-IEEE"
         return false
-    else 
+    else
         throw(ErrorException("The endiannes could not be recognised!"))
     end
 end
@@ -48,20 +48,51 @@ end
 
 @inline get_num(x::Number, lend::Bool) = lend ? htol(x) : hton(x)
 
-function get_int(array, address::Integer, lend::Bool) 
+@inline function get_int(array, address::Integer, lend::Bool)
     # address is in 0-index notation!
-    ptr = unsafe_load(Ptr{Int32}(pointer(array, address+1)))
-    get_num(ptr, lend)
+    GC.@preserve array begin
+        value = unsafe_load(Ptr{Int32}(pointer(array, address + 1)))
+        return get_num(value, lend)
+    end
 end
 
-function get_float(array, address::Integer, lend::Bool) 
+@inline function get_float(array, address::Integer, lend::Bool)
     # address is in 0-index notation!
-    ptr = unsafe_load(Ptr{Float64}(pointer(array, address+1)))
-    get_num(ptr, lend)
+    GC.@preserve array begin
+        value = unsafe_load(Ptr{Float64}(pointer(array, address + 1)))
+        return get_num(value, lend)
+    end
+end
+
+"""
+    read_doubles_rowmajor!(dest, bytes, address, nrows, ncols, little_endian)
+
+Read a row-major block of IEEE `Float64` values from a mapped DAF byte array into the
+column-major matrix `dest`. `address` uses the DAF parser's zero-based byte convention.
+"""
+@inline function read_doubles_rowmajor!(
+    dest::Matrix{Float64},
+    bytes::Vector{UInt8},
+    address::Int,
+    nrows::Int,
+    ncols::Int,
+    little_endian::Bool,
+)
+    GC.@preserve bytes begin
+        source = Ptr{Float64}(pointer(bytes, address + 1))
+        @inbounds for row in 1:nrows
+            offset = (row - 1)*ncols
+            for column in 1:ncols
+                dest[row, column] =
+                    get_num(unsafe_load(source, offset + column), little_endian)
+            end
+        end
+    end
+    return dest
 end
 
 
-# Vector Utils 
+# Vector Utils
 # =====================
 
 vhat(u) = u/vnorm(u)
@@ -75,12 +106,12 @@ function vcross(u, v)
     )
 end
 
-function vrot(v1, k, θ)
+function vrot(v1, k, angle)
 
-    s, c = sincos(θ)
+    s, c = sincos(angle)
     u = vcross(k, v1)
 
-    # Apply Rodrigues rotation formula to rotate `v1` around `k` of an angle `θ`
+    # Apply Rodrigues rotation formula to rotate `v1` around `k`.
     return v1 + (1-c)*vcross(k, u) + s*u
 
 end

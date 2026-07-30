@@ -2,20 +2,20 @@
 test_dir = artifact"testdata"
 DJ2000 = 2451545
 
-function reference_spk1_velocity(g, dt, refvel, Δ, kqmax, kq)
+function reference_spk1_velocity(g, dt, refvel, time_offset, kqmax, kq)
     fc = zeros(length(g) - 1)
     wc = zeros(length(g) - 2)
     w = zeros(length(g) + 2)
 
-    tp = Δ
+    tp = time_offset
     mq2 = kqmax - 2
     ks = kqmax - 1
 
     fc[1] = 1.0
     for j in 1:mq2
         fc[j+1] = tp / g[j]
-        wc[j] = Δ / g[j]
-        tp = Δ + g[j]
+        wc[j] = time_offset / g[j]
+        tp = time_offset + g[j]
     end
 
     for j in 1:kqmax
@@ -38,19 +38,19 @@ function reference_spk1_velocity(g, dt, refvel, Δ, kqmax, kq)
     end
 
     return @inbounds [
-        refvel[1] + Δ * sum(dt[j, 1] * w[j] for j in kq[1]:-1:1),
-        refvel[2] + Δ * sum(dt[j, 2] * w[j] for j in kq[2]:-1:1),
-        refvel[3] + Δ * sum(dt[j, 3] * w[j] for j in kq[3]:-1:1),
+        refvel[1] + time_offset * sum(dt[j, 1] * w[j] for j in kq[1]:-1:1),
+        refvel[2] + time_offset * sum(dt[j, 2] * w[j] for j in kq[2]:-1:1),
+        refvel[3] + time_offset * sum(dt[j, 3] * w[j] for j in kq[3]:-1:1),
     ]
 end
 
-@testset "SPK Type 21" verbose=true begin 
-    
-    # These kernels are tested against SPICE because CALCEPH performs erroneous 
+@testset "SPK Type 21" verbose=true begin
+
+    # These kernels are tested against SPICE because CALCEPH performs erroneous
     # computations on SPK types 21 (they differ from those of SPICE)
 
     # The first kernel has no epoch directories, whereas the second one does
-    kernels = [joinpath(test_dir, "spk21_ex1.bsp"), 
+    kernels = [joinpath(test_dir, "spk21_ex1.bsp"),
                joinpath(test_dir, "spk21_ex2.bsp")]
 
     yc1 = zeros(3)
@@ -63,7 +63,7 @@ end
         desc = ephj.files[1].desc[1]
         head = ephj.files[1].seglist.spk1[1].head
 
-        # Center and target bodies 
+        # Center and target bodies
         cid = Int(desc.cid)
         tid = Int(desc.tid)
 
@@ -71,24 +71,24 @@ end
 
         ep = t1j:1:t2j
         for j in 1:3000
-            
-            if iseven(j) 
-                cid, tid = tid, cid 
+
+            if iseven(j)
+                cid, tid = tid, cid
             end
 
-            if j == 1 
+            if j == 1
                 # Test initial time
-                tj = t1j 
+                tj = t1j
             elseif j == 2
                 # Test final time
-                tj = t2j 
+                tj = t2j
             elseif j < 100
                 # Test values at the directory epochs
                 tj = rand(head.epochs)
             elseif j < 500
                 # Test directory handling close to the borders
                 tj = min(t2j, max(rand(head.epochs) + randn(), t1j))
-            else 
+            else
                 tj = rand(ep)
             end
             tc = tj/86400
@@ -104,7 +104,7 @@ end
             @test yj1 ≈ ys1 atol=1e-13 rtol=1e-14
             @test yj2 ≈ ys2 atol=1e-13 rtol=1e-14
 
-            # Test if AUTODIFF works 
+            # Test if AUTODIFF works
             @test D¹(t->ephem_vector3(ephj, cid, tid, t), tj) ≈ yj2[4:end] atol=1e-9 rtol=1e-13
 
             # TODO: implement the acceleration and jerk. This functions below cannot be tested!
@@ -117,14 +117,14 @@ end
 
         end
 
-        # Thread-safe testing 
+        # Thread-safe testing
         tj = shuffle(collect(LinRange(t1j, t2j, 200)))
 
         pos = zeros(3, length(tj))
         for j in eachindex(tj)
             pos[:, j] =  ephem_vector3(ephj, cid, tid, tj[j])
         end
-    
+
         pos_m = zeros(3, length(tj))
         Threads.@threads for j in eachindex(tj)
             pos_m[:, j] = ephem_vector3(ephj, cid, tid, tj[j])
@@ -148,10 +148,17 @@ end
     cache.kqmax = 19
     cache.kq .= (19, 18, 17)
 
-    Δ = 0.25
-    Ephemerides.compute_mda_pos_coefficients!(cache, Δ)
-    @test_nowarn Ephemerides.compute_mda_vel_coefficients!(cache, Δ)
+    time_offset = 0.25
+    @test_nowarn Ephemerides.validate_mda_record(cache)
+    Ephemerides.compute_mda_pos_coefficients!(cache, time_offset)
+    @test_nowarn Ephemerides.compute_mda_vel_coefficients!(cache, time_offset)
 
-    expected = reference_spk1_velocity(cache.g, cache.dt, cache.refvel, Δ, cache.kqmax, cache.kq)
-    @test Ephemerides.compute_mda_velocity(cache, Δ) ≈ expected atol=1e-14 rtol=1e-14
+    expected = reference_spk1_velocity(cache.g, cache.dt, cache.refvel, time_offset, cache.kqmax, cache.kq)
+    @test Ephemerides.compute_mda_velocity(cache, time_offset) ≈ expected atol=1e-14 rtol=1e-14
+
+    # Regression for malformed records: never allow @inbounds interpolation to operate
+    # with a record whose integration orders exceed its preallocated workspaces.
+    cache.kqmax = 21
+    cache.kq .= (20, 19, 18)
+    @test_throws jEphem.EphemerisError Ephemerides.validate_mda_record(cache)
 end

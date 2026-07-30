@@ -1,6 +1,6 @@
 # Welcome to Ephemerides.jl!
 
-Ephemerides.jl is a Julia library that provides fast, thread-safe and allocation-free access to binary JPL [SPK](https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/C/req/spk.html) and [PCK](https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/C/req/pck.html) ephemeris files. Completely written in Julia, it enables Automatic-Differentiation (AD) via [ForwardDiff.jl](https://github.com/JuliaDiff/ForwardDiff.jl) across all of its function calls. 
+Ephemerides.jl is a Julia library that provides fast, thread-safe and allocation-free access to binary JPL [SPK](https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/C/req/spk.html) and [PCK](https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/C/req/pck.html) ephemeris files. Completely written in Julia, it supports backend-independent differentiation through [DifferentiationInterface.jl](https://juliadiff.org/DifferentiationInterface.jl/stable/). Forward-mode number propagation is native, while an optional ChainRulesCore extension supplies analytic time rules for mutation-sensitive reverse-mode backends.
 
 It outperforms both [SPICE.jl](https://github.com/JuliaAstro/SPICE.jl) and [CALCEPH.jl](https://github.com/JuliaAstro/CALCEPH.jl) calls for most types of SPK segments and supports state vector and orientation angles computation up to order 3 (jerk).
 

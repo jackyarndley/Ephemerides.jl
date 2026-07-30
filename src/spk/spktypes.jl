@@ -4,16 +4,16 @@
 # ----------------------------------
 
 """
-    AbstractSPKSegment 
+    AbstractSPKSegment
 
 Abstract type for all SPK segment types.
 """
-abstract type AbstractSPKSegment end 
+abstract type AbstractSPKSegment end
 
 """
     spk_field(spk::AbstractSPKSegment)
 
-Return the field number in the [`Ephemerides.SPKSegmentList`](@ref) associated to the given SPK 
+Return the field number in the [`Ephemerides.SPKSegmentList`](@ref) associated to the given SPK
 segment type.
 """
 function spk_field(::T) where {T <: AbstractSPKSegment}
@@ -39,18 +39,18 @@ function cache(::T) where {T <: AbstractSPKSegment}
 end
 
 """
-    AbstractSPKHeader 
+    AbstractSPKHeader
 
-Abstract type for all SPK segment type headers. 
+Abstract type for all SPK segment type headers.
 """
-abstract type AbstractSPKHeader end 
+abstract type AbstractSPKHeader end
 
-""" 
-    AbstractSPKCache 
+"""
+    AbstractSPKCache
 
 Abstract type for all SPK segment type caches.
 """
-abstract type AbstractSPKCache end 
+abstract type AbstractSPKCache end
 
 struct ThreadCache{T}
     single::T
@@ -87,32 +87,32 @@ end
 
 Header instance for SPK segments of type 1 and 21.
 
-### Fields 
-- `n` -- `Int` number of records in the segment 
+### Fields
+- `n` -- `Int` number of records in the segment
 - `ndirs` -- `Int` number of directory epochs
 - `epochs` -- Storage for directory epochs or epochs (when ndirs = 0)
-- `iaa` - `Int` initial segment file address 
+- `iaa` - `Int` initial segment file address
 - `etid` -- `Int` initial address for the epoch table (after all the MDA records)
 - `recsize` - `Int` Number of double numbers stored in each MDA record
 - `maxdim` - `Int` MDA dimension (fixed to 15 for type 1)
 """
-struct SPKSegmentHeader1 <: AbstractSPKHeader 
-    n::Int                  
-    ndirs::Int              
-    epochs::Vector{Float64} 
-    iaa::Int                
-    etid::Int               
-    recsize::Int            
-    maxdim::Int            
+struct SPKSegmentHeader1 <: AbstractSPKHeader
+    n::Int
+    ndirs::Int
+    epochs::Vector{Float64}
+    iaa::Int
+    etid::Int
+    recsize::Int
+    maxdim::Int
 end
 
-""" 
-    SPKSegmentCache1 <: AbstractSPKCache 
+"""
+    SPKSegmentCache1 <: AbstractSPKCache
 
-Cache instance for SPK segments of type 1 and 21. The fields contained within this cache 
-are taken from the FORTRAN NAIF's SPICE implementation for type 1 SPK segments. 
+Cache instance for SPK segments of type 1 and 21. The fields contained within this cache
+are taken from the FORTRAN NAIF's SPICE implementation for type 1 SPK segments.
 
-### Fields 
+### Fields
 - `tl` -- Reference epoch of the difference line.
 - `g` -- Stepsize function vector.
 - `refpos` -- Reference position vector.
@@ -127,7 +127,7 @@ are taken from the FORTRAN NAIF's SPICE implementation for type 1 SPK segments.
 - `vct` -- Buffer for the MDA computations.
 """
 mutable struct SPKSegmentCache1 <: AbstractSPKCache
-    
+
     tl::Float64
     g::Vector{Float64}
     refpos::Vector{Float64}
@@ -136,25 +136,25 @@ mutable struct SPKSegmentCache1 <: AbstractSPKCache
     kqmax::Int
     kq::Vector{Int}
     id::Int
-    fc::DiffCache{Vector{Float64}, Vector{Float64}} 
-    wc::DiffCache{Vector{Float64}, Vector{Float64}}     
-    w::DiffCache{Vector{Float64},  Vector{Float64}}     
-    vct::DiffCache{Vector{Float64}, Vector{Float64}}    
+    fc::DiffCache{Vector{Float64}, Vector{Float64}}
+    wc::DiffCache{Vector{Float64}, Vector{Float64}}
+    w::DiffCache{Vector{Float64},  Vector{Float64}}
+    vct::DiffCache{Vector{Float64}, Vector{Float64}}
 
 end
 
-""" 
+"""
     SPKSegmentType1 <: AbstractSPKSegment
 
-Segment instance for SPK segments of type 1 and 21, which contain Modified Difference Arrays 
-(MDA). This data type is normally used for spacecraft whose ephemerides are produced by JPL's 
-principal trajectory integrator DPTRAJ. 
+Segment instance for SPK segments of type 1 and 21, which contain Modified Difference Arrays
+(MDA). This data type is normally used for spacecraft whose ephemerides are produced by JPL's
+principal trajectory integrator DPTRAJ.
 
-### Fields 
-- `head` -- Segment header 
-- `cache` -- Segment cache 
+### Fields
+- `head` -- Segment header
+- `cache` -- Segment cache
 
-### References 
+### References
 - [SPK Required Reading](https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/C/req/spk.html)
 - [SPICE Toolkit](https://naif.jpl.nasa.gov/naif/toolkit_FORTRAN.html)
 """
@@ -163,7 +163,7 @@ struct SPKSegmentType1 <: AbstractSPKSegment
     cache::ThreadCache{SPKSegmentCache1}
 end
 
-@inline header(spk::SPKSegmentType1) = spk.head 
+@inline header(spk::SPKSegmentType1) = spk.head
 @inline cache(spk::SPKSegmentType1) = thread_cache(spk.cache)
 
 
@@ -176,10 +176,10 @@ end
 
 Header instance for SPK segments of type 2 and 3.
 
-### Fields 
+### Fields
 - `tstart` -- `Float64` initial epoch of the first record, in seconds since J2000
 - `tlen` -- `Float64` interval length covered by each record, in seconds
-- `order` -- `Int` polynomial order 
+- `order` -- `Int` polynomial order
 - `N` -- `Int` number of coefficients in each window
 - `n` -- `Int` number of records in the segment
 - `recsize` -- `Int` byte size of each logical record
@@ -188,47 +188,45 @@ Header instance for SPK segments of type 2 and 3.
 - `type` -- `Int` SPK segment type, either 2 or 2
 """
 struct SPKSegmentHeader2 <: AbstractSPKHeader
-    tstart::Float64     
-    tlen::Float64       
+    tstart::Float64
+    tlen::Float64
     order::Int
     N::Int
-    n::Int              
+    n::Int
     recsize::Int
     ncomp::Int
-    iaa::Int    
+    iaa::Int
     type::Int
 end
 
-""" 
-    SPKSegmentCache2 <: AbstractSPKCache 
+"""
+    SPKSegmentCache2 <: AbstractSPKCache
 
 Cache instance for SPK segments of type 2 and 3.
 
-### Fields 
+### Fields
 - `A` -- Chebyshev's polynomial coefficients, with size (ncomp, order)
 - `p` -- Stores the record mid point and radius and scale factor
-- `buff` -- Stores the buffers for the Chebyshev polynomials
 - `id` -- Index of the currently loaded logical record
 """
 mutable struct SPKSegmentCache2 <: AbstractSPKCache
     A::Matrix{Float64}
-    p::MVector{3, Float64} 
-    buff::InterpCache{Float64}
+    p::MVector{3, Float64}
     id::Int
 end
 
-""" 
+"""
     SPKSegmentType2 <: AbstractSPKSegment
 
-Segment instance for SPK segments of type 2 and 3, which contain Chebyshev polynomial 
-coefficients for the position and/or state of the body as function of time. This data type 
+Segment instance for SPK segments of type 2 and 3, which contain Chebyshev polynomial
+coefficients for the position and/or state of the body as function of time. This data type
 is normally used for planet barycenters, and for satellites whose ephemerides are integrated.
 
-### Fields 
-- `head` -- Segment header 
-- `cache` -- Segment cache 
+### Fields
+- `head` -- Segment header
+- `cache` -- Segment cache
 
-### References 
+### References
 - [SPK Required Reading](https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/C/req/spk.html)
 - [SPICE Toolkit](https://naif.jpl.nasa.gov/naif/toolkit_FORTRAN.html)
 """
@@ -237,7 +235,7 @@ struct SPKSegmentType2 <: AbstractSPKSegment
     cache::ThreadCache{SPKSegmentCache2}
 end
 
-@inline header(spk::SPKSegmentType2) = spk.head 
+@inline header(spk::SPKSegmentType2) = spk.head
 @inline cache(spk::SPKSegmentType2) = thread_cache(spk.cache)
 
 
@@ -250,29 +248,29 @@ end
 
 Header instance for SPK segments of type 5.
 
-### Fields 
-- `GM` -- `Float64` Gravitational constant 
-- `n` -- `Int` number of states 
+### Fields
+- `GM` -- `Float64` Gravitational constant
+- `n` -- `Int` number of states
 - `ndirs` -- `Int` number of epoch directories
 - `etid` -- `Int` initial address for the epoch table (after all the state data)
 - `epochs` -- Storage for directory epochs or epochs (when ndirs = 0)
-- `iaa` - `Int` initial segment file address 
+- `iaa` - `Int` initial segment file address
 """
 struct SPKSegmentHeader5 <: AbstractSPKHeader
-    GM::Float64 
-    n::Int 
-    ndirs::Int 
+    GM::Float64
+    n::Int
+    ndirs::Int
     etid::Int
     epochs::Vector{Float64}
-    iaa::Int   
+    iaa::Int
 end
 
-""" 
-    SPKSegmentCache5 <: AbstractSPKCache 
+"""
+    SPKSegmentCache5 <: AbstractSPKCache
 
 Cache instance for SPK segments of type 5.
 
-### Fields 
+### Fields
 - `c1` -- Twobody propagation cache for the left state.
 - `c2` -- Twobody propagation cache for the right state.
 - `epochs` -- Epochs associated to the two states.
@@ -285,16 +283,16 @@ mutable struct SPKSegmentCache5 <: AbstractSPKCache
     id::Int
 end
 
-""" 
+"""
     SPKSegmentType5 <: AbstractSPKSegment
 
-Segment instance for SPK segments of type 5. 
+Segment instance for SPK segments of type 5.
 
-### Fields 
-- `head` -- Segment header 
-- `cache` -- Segment cache 
+### Fields
+- `head` -- Segment header
+- `cache` -- Segment cache
 
-### References 
+### References
 - [SPK Required Reading](https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/C/req/spk.html)
 - [SPICE Toolkit](https://naif.jpl.nasa.gov/naif/toolkit_FORTRAN.html)
 """
@@ -303,7 +301,7 @@ struct SPKSegmentType5 <: AbstractSPKSegment
     cache::ThreadCache{SPKSegmentCache5}
 end
 
-@inline header(spk::SPKSegmentType5) = spk.head 
+@inline header(spk::SPKSegmentType5) = spk.head
 @inline cache(spk::SPKSegmentType5) = thread_cache(spk.cache)
 
 
@@ -316,23 +314,23 @@ end
 
 Header instance for SPK segments of type 8 and 12.
 
-### Fields 
-- `tstart` -- `Float64` segment starting epoch, in TDB seconds since J2000 
+### Fields
+- `tstart` -- `Float64` segment starting epoch, in TDB seconds since J2000
 - `tlen` -- `Float64` interval length, in seconds
 - `order` -- `Int` interpolating polynomial degree
 - `N` -- `Int` group size
 - `n` -- `Int` number of states in the segment
-- `iaa` - `Int` initial segment file address 
+- `iaa` - `Int` initial segment file address
 - `iseven` -- `Bool` true for even group size
 - `type` -- `Int` SPK type (either 8 or 12)
 """
 struct SPKSegmentHeader8 <: AbstractSPKHeader
-    tstart::Float64     
-    tlen::Float64       
+    tstart::Float64
+    tlen::Float64
     order::Int
     N::Int
     n::Int
-    iaa::Int      
+    iaa::Int
     iseven::Bool
     type::Int
 end
@@ -342,7 +340,7 @@ end
 
 Cache instance for SPK segments of type 8 and 12.
 
-### Fields 
+### Fields
 - `states` -- Matrix storing the states of the interpolating points.
 - `buff` -- Buffers to compute the interpolating polynomials.
 - `id` -- Index of the currently loaded logical record.
@@ -351,18 +349,18 @@ mutable struct SPKSegmentCache8 <: AbstractSPKCache
     states::Matrix{Float64}
     buff::InterpCache{Float64}
     id::Int
-end 
+end
 
-""" 
+"""
     SPKSegmentType8 <: AbstractSPKSegment
 
 Segment instance for SPK segments of type 8 and 12.
 
-### Fields 
-- `head` -- Segment header 
-- `cache` -- Segment cache 
+### Fields
+- `head` -- Segment header
+- `cache` -- Segment cache
 
-### References 
+### References
 - [SPK Required Reading](https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/C/req/spk.html)
 - [SPICE Toolkit](https://naif.jpl.nasa.gov/naif/toolkit_FORTRAN.html)
 """
@@ -371,7 +369,7 @@ struct SPKSegmentType8 <: AbstractSPKSegment
     cache::ThreadCache{SPKSegmentCache8}
 end
 
-@inline header(spk::SPKSegmentType8) = spk.head 
+@inline header(spk::SPKSegmentType8) = spk.head
 @inline cache(spk::SPKSegmentType8) = thread_cache(spk.cache)
 
 
@@ -384,26 +382,26 @@ end
 
 Header instance for SPK segments of type 9 and 13.
 
-### Fields 
+### Fields
 - `n` -- `Int` number of states in the segment
 - `ndirs` -- `Int` number of epoch directories
 - `epochs` -- Storage for directory epochs or epochs (when ndirs = 0)
-- `iaa` - `Int` initial segment file address 
+- `iaa` - `Int` initial segment file address
 - `etid` -- `Int` initial address for the epoch table (after all the state data)
 - `order` -- `Int` interpolating polynomial degree
-- `N` -- `Int` group size 
+- `N` -- `Int` group size
 - `iseven` -- `Bool` true for even group size
 - `type` -- `Int` SPK type (either 9 or 13)
 """
 struct SPKSegmentHeader9 <: AbstractSPKHeader
     n::Int
-    ndirs::Int 
+    ndirs::Int
     epochs::Vector{Float64}
     iaa::Int
-    etid::Int 
-    order::Int 
-    N::Int 
-    iseven::Bool 
+    etid::Int
+    order::Int
+    N::Int
+    iseven::Bool
     type::Int
 end
 
@@ -412,9 +410,9 @@ end
 
 Cache instance for SPK segments of type 9 and 13.
 
-### Fields 
-- `epochs` -- Epochs of the interpolating points. 
-- `states` -- Matrix storing the states of the interpolating points. 
+### Fields
+- `epochs` -- Epochs of the interpolating points.
+- `states` -- Matrix storing the states of the interpolating points.
 - `buff` -- Buffers to compute the interpolating polynomials.
 - `id` -- Index of the currently loaded logical record.
 """
@@ -423,18 +421,18 @@ mutable struct SPKSegmentCache9 <: AbstractSPKCache
     states::Matrix{Float64}
     buff::InterpCache{Float64}
     id::Int
-end 
+end
 
-""" 
+"""
     SPKSegmentType9 <: AbstractSPKSegment
 
 Segment instance for SPK segments of type 9 and 13.
 
-### Fields 
-- `head` -- Segment header 
-- `cache` -- Segment cache 
+### Fields
+- `head` -- Segment header
+- `cache` -- Segment cache
 
-### References 
+### References
 - [SPK Required Reading](https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/C/req/spk.html)
 - [SPICE Toolkit](https://naif.jpl.nasa.gov/naif/toolkit_FORTRAN.html)
 """
@@ -443,7 +441,7 @@ struct SPKSegmentType9 <: AbstractSPKSegment
     cache::ThreadCache{SPKSegmentCache9}
 end
 
-@inline header(spk::SPKSegmentType9) = spk.head 
+@inline header(spk::SPKSegmentType9) = spk.head
 @inline cache(spk::SPKSegmentType9) = thread_cache(spk.cache)
 
 
@@ -456,7 +454,7 @@ end
 
 Header instance for SPK segments of type 14.
 
-### Fields 
+### Fields
 - `order` -- `Int` interpolating polynomial degree
 - `n` -- `Int` number of packets in the segment
 - `ndirs` -- `Int` number of epoch directories
@@ -464,42 +462,42 @@ Header instance for SPK segments of type 14.
 - `etid` -- `Int` initial address for the epoch table (after all the state data)
 - `ptid` -- `Int` initial address for the packet table (after the constants)
 - `pktsize` -- `Int` size of each data packet excluding the packet information area.
-- `pktoff` -- `Int` offset of the packet data from the packet start 
+- `pktoff` -- `Int` offset of the packet data from the packet start
 - `ncomp` -- `Int` number of states coefficients (= 6 for SPK 14)
 - `N` -- `Int` number of polynomial coefficients
 """
 struct SPKSegmentHeader14 <: AbstractSPKHeader
     order::Int
-    n::Int 
-    ndirs::Int 
+    n::Int
+    ndirs::Int
     epochs::Vector{Float64}
-    etid::Int 
-    ptid::Int  
-    pktsize::Int 
-    pktoff::Int  
+    etid::Int
+    ptid::Int
+    pktsize::Int
+    pktoff::Int
     ncomp::Int
-    N::Int 
+    N::Int
 end
 
-""" 
+"""
     SPKSegmentType14 <: AbstractSPKSegment
 
 Segment instance for SPK segments of type 14.
 
-### Fields 
-- `head` -- Segment header 
-- `cache` -- Segment cache 
+### Fields
+- `head` -- Segment header
+- `cache` -- Segment cache
 
-### References 
+### References
 - [SPK Required Reading](https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/C/req/spk.html)
 - [SPICE Toolkit](https://naif.jpl.nasa.gov/naif/toolkit_FORTRAN.html)
 """
-struct SPKSegmentType14 <: AbstractSPKSegment 
-    head::SPKSegmentHeader14 
+struct SPKSegmentType14 <: AbstractSPKSegment
+    head::SPKSegmentHeader14
     cache::ThreadCache{SPKSegmentCache2}
 end
 
-@inline header(spk::SPKSegmentType14) = spk.head 
+@inline header(spk::SPKSegmentType14) = spk.head
 @inline cache(spk::SPKSegmentType14) = thread_cache(spk.cache)
 
 
@@ -512,49 +510,49 @@ end
 
 Header instance for SPK segments of type 15.
 
-### Fields 
-- `epoch` -- Epoch of periapsis 
+### Fields
+- `epoch` -- Epoch of periapsis
 - `tp` -- Trajectory pole, i.e., vector parallel to the angular momentum of the orbit
-- `pv` -- Central body north pole unit vector 
-- `pa` -- Periapsis unit vector at epoch 
-- `p` -- Semi-latus rectum 
-- `ecc` -- Eccentricity 
-- `j2f` -- J2 processing flag 
+- `pv` -- Central body north pole unit vector
+- `pa` -- Periapsis unit vector at epoch
+- `p` -- Semi-latus rectum
+- `ecc` -- Eccentricity
+- `j2f` -- J2 processing flag
 - `vj2` -- J2 validation flag, true if the orbit shape is compliant with J2 pertubations.
-- `GM` -- Central body gravitational constant (km³/s²)
-- `J2` -- Central body J2 
+- `GM` -- Central body gravitational constant (km^3/s^2)
+- `J2` -- Central body J2
 - `R` -- Central body radius (km)
 - `dmdt` -- Mean anomaly rate of change (rad/s)
-- `kn` -- Gain factor for the regression of the nodes 
+- `kn` -- Gain factor for the regression of the nodes
 - `kp` -- Gain factor for the precession of the pericenter
 """
 struct SPKSegmentHeader15 <: AbstractSPKHeader
-    epoch::Float64 
-    tp::SVector{3, Float64}  
+    epoch::Float64
+    tp::SVector{3, Float64}
     pv::SVector{3, Float64}
-    pa::SVector{3, Float64}  
-    p::Float64 
+    pa::SVector{3, Float64}
+    p::Float64
     ecc::Float64
     j2f::Float64
     vj2::Bool
-    GM::Float64 
+    GM::Float64
     J2::Float64
-    R::Float64 
+    R::Float64
     dmdt::Float64
     kn::Float64
     kp::Float64
 end
 
-""" 
+"""
     SPKSegmentType15 <: AbstractSPKSegment
 
 Segment instance for SPK segments of type 15.
 
-### Fields 
-- `head` -- Segment header 
-- `cache` -- Segment cache 
+### Fields
+- `head` -- Segment header
+- `cache` -- Segment cache
 
-### References 
+### References
 - [SPK Required Reading](https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/C/req/spk.html)
 - [SPICE Toolkit](https://naif.jpl.nasa.gov/naif/toolkit_FORTRAN.html)
 """
@@ -563,7 +561,7 @@ struct SPKSegmentType15 <: AbstractSPKSegment
     cache::ThreadCache{TwoBodyUniversalCache}
 end
 
-@inline header(spk::SPKSegmentType15) = spk.head 
+@inline header(spk::SPKSegmentType15) = spk.head
 @inline cache(spk::SPKSegmentType15) = thread_cache(spk.cache)
 
 
@@ -580,10 +578,10 @@ Header instance for SPK segments of type 17.
 - `epoch`: epoch of periapsis (s)
 - `sma`: semi-major axis (km)
 - `h`: H term of the equinoctial elements
-- `k`: K term of the equinoctial elements 
+- `k`: K term of the equinoctial elements
 - `lon`: mean longitude at epoch (rad)
-- `p`: P term of the equinoctial elements 
-- `q`: Q term of the equinoctial elements 
+- `p`: P term of the equinoctial elements
+- `q`: Q term of the equinoctial elements
 - `dlpdt`: rate of longitude of the periapse (rad/s)
 - `dmldt`: mean longitude rate (mean motion rate), (rad/s)
 - `dnodedt`: longitude of the ascending node rate (rad/s)
@@ -592,15 +590,15 @@ Header instance for SPK segments of type 17.
 - `R`: Rotation matrix from planetary equator to inertial reference frame
 """
 struct SPKSegmentHeader17 <: AbstractSPKHeader
-    epoch::Float64 
-    sma::Float64 
-    h::Float64 
-    k::Float64 
+    epoch::Float64
+    sma::Float64
+    h::Float64
+    k::Float64
     lon::Float64
-    p::Float64 
-    q::Float64 
+    p::Float64
+    q::Float64
     dlpdt::Float64
-    dmldt::Float64 
+    dmldt::Float64
     dnodedt::Float64
     ra::Float64
     de::Float64
@@ -608,19 +606,19 @@ struct SPKSegmentHeader17 <: AbstractSPKHeader
 end
 
 
-""" 
+"""
     SPKSegmentType17 <: AbstractSPKSegment
 
 Segment instance for SPK segments of type 17.
 
-### Fields 
-- `head` -- Segment header 
+### Fields
+- `head` -- Segment header
 
-!!! note 
-    SPK segments of type 17 do not require a cache because they do not extract any 
+!!! note
+    SPK segments of type 17 do not require a cache because they do not extract any
     additional coefficients at runtime.
 
-### References 
+### References
 - [SPK Required Reading](https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/C/req/spk.html)
 - [SPICE Toolkit](https://naif.jpl.nasa.gov/naif/toolkit_FORTRAN.html)
 """
@@ -628,7 +626,7 @@ struct SPKSegmentType17 <: AbstractSPKSegment
     head::SPKSegmentHeader17
 end
 
-@inline header(spk::SPKSegmentType17) = spk.head 
+@inline header(spk::SPKSegmentType17) = spk.head
 
 
 # ----------------------------------
@@ -640,25 +638,25 @@ end
 
 Header instance for SPK segments of type 18.
 
-### Fields 
+### Fields
 - `n` -- `Int` number of states in the segment
 - `ndirs` -- `Int` number of epoch directories
 - `epochs` -- Storage for directory epochs or epochs (when ndirs = 0)
-- `iaa` - `Int` initial segment file address 
+- `iaa` - `Int` initial segment file address
 - `etid` -- `Int` initial address for the epoch table (after all the state data)
 - `order` -- `Int` interpolating polynomial degree
-- `N` -- `Int` group size 
+- `N` -- `Int` group size
 - `subtype` -- `Int` type 18 subtype, either 0 (Hermite) or 1 (Lagrange)
 - `packetsize` -- `Int` packet size for each point, either 12 (Hermite) or 6 (Lagrange)
 """
 mutable struct SPKSegmentHeader18 <: AbstractSPKHeader
     n::Int
-    ndirs::Int 
+    ndirs::Int
     epochs::Vector{Float64}
     iaa::Int
-    etid::Int 
-    order::Int 
-    N::Int 
+    etid::Int
+    order::Int
+    N::Int
     subtype::Int
     packetsize::Int
 end
@@ -668,10 +666,10 @@ end
 
 Cache instance for SPK segments of type 18.
 
-### Fields 
+### Fields
 - `p` -- Vector storing indexes of the first and last points as well as the window size.
-- `epochs` -- Epochs of the interpolating points. 
-- `states` -- Matrix storing the states of the interpolating points. 
+- `epochs` -- Epochs of the interpolating points.
+- `states` -- Matrix storing the states of the interpolating points.
 - `buff` -- Buffers to compute the interpolating polynomials.
 """
 mutable struct SPKSegmentCache18 <: AbstractSPKCache
@@ -679,7 +677,7 @@ mutable struct SPKSegmentCache18 <: AbstractSPKCache
     epochs::Vector{Float64}
     states::Matrix{Float64}
     buff::InterpCache{Float64}
-end 
+end
 
 
 # ----------------------------------
@@ -691,7 +689,7 @@ end
 
 Header instance for SPK segments of type 19.
 
-### Fields 
+### Fields
 - `n` -- `Int` number of states in the segment.
 - `ndirs` -- `Int` number of epoch directories.
 - `times` -- Storage for interval directories or start times (when ndirs = 0).
@@ -702,14 +700,14 @@ Header instance for SPK segments of type 19.
 - `type` -- `Int` either type 18 or 19.
 """
 struct SPKSegmentHeader19 <: AbstractSPKHeader
-    n::Int 
-    ndirs::Int 
+    n::Int
+    ndirs::Int
     times::Vector{Float64}
-    iaa::Int 
-    etid::Int 
-    ptid::Int 
+    iaa::Int
+    etid::Int
+    ptid::Int
     usefirst::Bool
-    type::Int 
+    type::Int
 end
 
 """
@@ -717,7 +715,7 @@ end
 
 Cache instance for SPK segments of type 19.
 
-### Fields 
+### Fields
 - `minihead` -- Header with the mini-segment properties.
 - `minidata` -- Cache for the mini-segment.
 - `id` -- Index of the currently loaded mini-segment.
@@ -726,19 +724,19 @@ mutable struct SPKSegmentCache19 <: AbstractSPKCache
     minihead::SPKSegmentHeader18
     minidata::SPKSegmentCache18
     id::Int
-end 
+end
 
-""" 
+"""
     SPKSegmentType19 <: AbstractSPKSegment
 
-Segment instance for SPK segments of type 18 and 19. Type 18 segments are treated as 
+Segment instance for SPK segments of type 18 and 19. Type 18 segments are treated as
 special cases of a type 19 with a single mini-segment.
 
-### Fields 
-- `head` -- Segment header 
-- `cache` -- Segment cache 
+### Fields
+- `head` -- Segment header
+- `cache` -- Segment cache
 
-### References 
+### References
 - [SPK Required Reading](https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/C/req/spk.html)
 - [SPICE Toolkit](https://naif.jpl.nasa.gov/naif/toolkit_FORTRAN.html)
 """
@@ -747,7 +745,7 @@ struct SPKSegmentType19 <: AbstractSPKSegment
     cache::ThreadCache{SPKSegmentCache19}
 end
 
-@inline header(spk::SPKSegmentType19) = spk.head 
+@inline header(spk::SPKSegmentType19) = spk.head
 @inline cache(spk::SPKSegmentType19) = thread_cache(spk.cache)
 
 
@@ -760,59 +758,57 @@ end
 
 Header instance for SPK segments of type 20.
 
-### Fields 
+### Fields
 - `dscale` -- `Float64` length conversion factor
 - `tscale` -- `Float64` time conversion factor
 - `tstart` -- `Float64` initial epoch of the first record, in seconds since J2000
 - `tlen` -- `Float64` interval length covered by each record, in seconds
 - `recsize` -- `Int` byte size of each logical record
-- `order` -- `Int` polynomial order 
+- `order` -- `Int` polynomial order
 - `N` -- `Int` number of coefficients in each window
 - `n` -- `Int` number of records in the segment
 - `iaa` -- `Int` initial segment file address
 """
-struct SPKSegmentHeader20 <: AbstractSPKHeader 
-    dscale::Float64 
-    tscale::Float64 
+struct SPKSegmentHeader20 <: AbstractSPKHeader
+    dscale::Float64
+    tscale::Float64
     tstart::Float64
-    tlen::Float64 
-    recsize::Int 
-    order::Int 
-    N::Int 
-    n::Int 
-    iaa::Int 
+    tlen::Float64
+    recsize::Int
+    order::Int
+    N::Int
+    n::Int
+    iaa::Int
 end
 
-""" 
-    SPKSegmentCache20 <: AbstractSPKCache 
+"""
+    SPKSegmentCache20 <: AbstractSPKCache
 
 Cache instance for SPK segments of type 20.
 
-### Fields 
+### Fields
 - `id` -- Index of the currently loaded logical record
 - `p` -- Stores the record position constants
 - `A` -- Chebyshev's polynomial coefficients, with size (ncomp, order)
-- `buff` -- Stores the buffers for the Chebyshev polynomials
 """
 mutable struct SPKSegmentCache20 <: AbstractSPKCache
     id::Int
     p::MVector{3, Float64}
     A::Matrix{Float64}
-    buff::InterpCache{Float64}
 end
 
-""" 
+"""
     SPKSegmentType2 <: AbstractSPKSegment
 
-Segment instance for SPK segments of type 20, which contain Chebyshev polynomial coefficients 
-for the position and/or state of the body as function of time. This data type is normally 
+Segment instance for SPK segments of type 20, which contain Chebyshev polynomial coefficients
+for the position and/or state of the body as function of time. This data type is normally
 used for planet barycenters, and for satellites whose ephemerides are integrated.
 
-### Fields 
-- `head` -- Segment header 
-- `cache` -- Segment cache 
+### Fields
+- `head` -- Segment header
+- `cache` -- Segment cache
 
-### References 
+### References
 - [SPK Required Reading](https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/C/req/spk.html)
 - [SPICE Toolkit](https://naif.jpl.nasa.gov/naif/toolkit_FORTRAN.html)
 """
@@ -821,7 +817,7 @@ struct SPKSegmentType20 <: AbstractSPKSegment
     cache::ThreadCache{SPKSegmentCache20}
 end
 
-@inline header(spk::SPKSegmentType20) = spk.head 
+@inline header(spk::SPKSegmentType20) = spk.head
 @inline cache(spk::SPKSegmentType20) = thread_cache(spk.cache)
 
 
@@ -853,9 +849,9 @@ const SPK_SEGMENTLIST_MAPPING = Dict(
 # ----------------------------------
 
 """
-    SPKSegmentList 
+    SPKSegmentList
 
-A container object to efficiently store all the different SPK segments that are contained 
+A container object to efficiently store all the different SPK segments that are contained
 within a single DAF file.
 
 ---
@@ -864,33 +860,33 @@ within a single DAF file.
 
 Initialises an empty `SPKSegmentList` object.
 
-### See also 
+### See also
 See also [`Ephemerides.add_segment!`](@ref)
 
 """
 struct SPKSegmentList
 
-    spk2::Vector{SPKSegmentType2} 
-    spk9::Vector{SPKSegmentType9} 
-    spk1::Vector{SPKSegmentType1} 
-    spk14::Vector{SPKSegmentType14} 
+    spk2::Vector{SPKSegmentType2}
+    spk9::Vector{SPKSegmentType9}
+    spk1::Vector{SPKSegmentType1}
+    spk14::Vector{SPKSegmentType14}
     spk15::Vector{SPKSegmentType15}
     spk8::Vector{SPKSegmentType8}
-    spk19::Vector{SPKSegmentType19} 
-    spk20::Vector{SPKSegmentType20} 
-    spk5::Vector{SPKSegmentType5} 
+    spk19::Vector{SPKSegmentType19}
+    spk20::Vector{SPKSegmentType20}
+    spk5::Vector{SPKSegmentType5}
     spk17::Vector{SPKSegmentType17}
-    
+
     function SPKSegmentList()
         new(
-            SPKSegmentType2[], 
-            SPKSegmentType9[], 
+            SPKSegmentType2[],
+            SPKSegmentType9[],
             SPKSegmentType1[],
             SPKSegmentType14[],
             SPKSegmentType15[],
             SPKSegmentType8[],
             SPKSegmentType19[],
-            SPKSegmentType20[], 
+            SPKSegmentType20[],
             SPKSegmentType5[],
             SPKSegmentType17[]
         )
@@ -900,7 +896,7 @@ end
 """
     add_segment!(list::SPKSegmentList, spk::AbstractSPKSegment)
 
-Add the SPK segment to the proper vector within the given [`Ephemerides.SPKSegmentList`](@ref) `list` 
+Add the SPK segment to the proper vector within the given [`Ephemerides.SPKSegmentList`](@ref) `list`
 """
 @inline function add_segment!(list::SPKSegmentList, spk::AbstractSPKSegment)
     push!(getfield(list, spk_field(spk)), spk)

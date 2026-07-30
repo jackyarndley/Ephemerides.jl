@@ -1,5 +1,5 @@
 
-@testset "Properties" verbose=true begin 
+@testset "Properties" verbose=true begin
 
     # Test segment boundaries
     desclist = [
@@ -15,7 +15,7 @@
         Ephemerides.DAFSegmentDescriptor(2, 1.0, 1.6, 31008, 1, -1, 1, 1),
         Ephemerides.DAFSegmentDescriptor(2, 0.5, 1.0, 31008, 1, -1, 1, 1)
     ]
-    
+
     ts, te = Ephemerides.get_segment_boundaries(desclist)
     @test ts == [0.5]
     @test te == [1.6]
@@ -25,7 +25,7 @@
         Ephemerides.DAFSegmentDescriptor(2, 1.0, 1.6, 31008, 1, -1, 1, 1),
         Ephemerides.DAFSegmentDescriptor(2, 0.5, 0.9, 31008, 1, -1, 1, 1)
     ]
-    
+
     ts, te = Ephemerides.get_segment_boundaries(desclist)
     @test ts == [0.5, 1.0]
     @test te == [0.9, 1.6]
@@ -48,7 +48,7 @@
         Ephemerides.DAFSegmentDescriptor(2, 1.0, 1.6, 31008, 1, -1, 1, 1),
         Ephemerides.DAFSegmentDescriptor(2, 1.6, 2, 31008, 1, -1, 1, 1)
     ]
-    
+
     ts, te = Ephemerides.get_segment_boundaries(desclist)
     @test ts == [1.0]
     @test te == [2]
@@ -58,7 +58,7 @@
         Ephemerides.DAFSegmentDescriptor(2, 1.0, 1.6, 31008, 1, -1, 1, 1),
         Ephemerides.DAFSegmentDescriptor(2, 1.7, 2, 31008, 1, -1, 1, 1)
     ]
-    
+
     ts, te = Ephemerides.get_segment_boundaries(desclist)
     @test ts == [1.0, 1.7]
     @test te == [1.6, 2]
@@ -83,11 +83,11 @@
         Ephemerides.DAFSegmentDescriptor(2, 1.6, 2, 31008, 1, -1, 1, 1),
         Ephemerides.DAFSegmentDescriptor(2, 0.4, 1.0, 31008, 1, -1, 1, 1),
     ]
-    
+
     ts, te = Ephemerides.get_segment_boundaries(desclist)
     @test ts == [0.4]
     @test te == [2]
-    
+
     desclist = [
         Ephemerides.DAFSegmentDescriptor(2, 1.0, 1.6, 31008, 1, -1, 1, 1),
         Ephemerides.DAFSegmentDescriptor(2, 1.6, 2, 31008, 1, -1, 1, 1),
@@ -116,7 +116,7 @@
     @test ts == [1.0]
     @test te == [1.6]
 
-    # Test last scenario with removal of 1 ts 
+    # Test last scenario with removal of 1 ts
     desclist = [
         Ephemerides.DAFSegmentDescriptor(2, 1.0, 1.6, 31008, 1, -1, 1, 1),
         Ephemerides.DAFSegmentDescriptor(2, 2.0, 3.0, 31008, 1, -1, 1, 1),
@@ -127,7 +127,7 @@
     @test ts == [1.0, 1.8]
     @test te == [1.6, 3.0]
 
-    # Test last scenario with removal of 1 te 
+    # Test last scenario with removal of 1 te
     desclist = [
         Ephemerides.DAFSegmentDescriptor(2, 1.0, 1.6, 31008, 1, -1, 1, 1),
         Ephemerides.DAFSegmentDescriptor(2, 2.0, 3.0, 31008, 1, -1, 1, 1),
@@ -145,7 +145,7 @@
         Ephemerides.DAFSegmentDescriptor(2, 2.7, 3.0, 31008, 1, -1, 1, 1),
         Ephemerides.DAFSegmentDescriptor(2, 1.7, 2.85, 31008, 1, -1, 1, 1),
     ]
-    
+
     ts, te = Ephemerides.get_segment_boundaries(desclist)
     @test ts == [1.0, 1.7]
     @test te == [1.5, 3.0]
@@ -157,7 +157,7 @@
         Ephemerides.DAFSegmentDescriptor(2, 2.7, 3.0, 31008, 1, -1, 1, 1),
         Ephemerides.DAFSegmentDescriptor(2, 1.4, 2.5, 31008, 1, -1, 1, 1),
     ]
-    
+
     ts, te = Ephemerides.get_segment_boundaries(desclist)
     @test ts == [1.0, 2.7]
     @test te == [2.5, 3.0]
@@ -169,11 +169,11 @@
         Ephemerides.DAFSegmentDescriptor(2, 2.7, 3.0, 31008, 1, -1, 1, 1),
         Ephemerides.DAFSegmentDescriptor(2, 1.4, 2.3, 31008, 1, -1, 1, 1),
     ]
-    
+
     ts, te = Ephemerides.get_segment_boundaries(desclist)
     @test ts == [1.0, 2.7]
     @test te == [2.4, 3.0]
-    
+
     desclist = [
         Ephemerides.DAFSegmentDescriptor(2, 1, 2., 31008, 1, -1, 1, 1),
         Ephemerides.DAFSegmentDescriptor(2, 3, 4, 31008, 1, -1, 1, 1),
@@ -181,15 +181,47 @@
         Ephemerides.DAFSegmentDescriptor(2, 7, 8, 31008, 1, -1, 1, 1),
         Ephemerides.DAFSegmentDescriptor(2, 2.5, 4.5, 31008, 1, -1, 1, 1),
     ]
-    
+
     ts, te = Ephemerides.get_segment_boundaries(desclist)
     @test ts == [1.0, 2.5, 5.0, 7.0]
     @test te == [2.0, 4.5, 6.0, 8.0]
-    
+
     # Test initial and final times on SPK/PCK records
     rec_pck = Ephemerides.EphemRecordPCK(10, 20, [1.0, 2.0], [1.6, 2.1])
     @test Ephemerides.initial_times(rec_pck) == [1.0, 2.0]
     @test Ephemerides.final_times(rec_pck) == [1.6, 2.1]
+
+    @testset "Route cache preserves segment priority" begin
+        high_priority = Ephemerides.SPKLink(
+            Ephemerides.DAFSegmentDescriptor(2, 5.0, 10.0, 399, 3, 1, 1, 1),
+            1,
+            1,
+            1,
+            1,
+        )
+        fallback = Ephemerides.SPKLink(
+            Ephemerides.DAFSegmentDescriptor(2, 0.0, 10.0, 399, 3, 1, 1, 1),
+            2,
+            1,
+            1,
+            1,
+        )
+        cache = Ephemerides.RouteCache()
+        candidates = [high_priority, fallback]
+
+        @test Ephemerides.file_id(
+            Ephemerides._find_candidate(candidates, cache, 3, 399, 1.0, "point")
+        ) == 2
+        @test Ephemerides.file_id(
+            Ephemerides._find_candidate(candidates, cache, 3, 399, 6.0, "point")
+        ) == 1
+    end
+
+    @testset "Route cache distributes common third-body pairs" begin
+        pairs = ((3, 399), (3, 301), (0, 10), (0, 5), (0, 6))
+        slots = map(pair -> Ephemerides.route_cache_slot(pair...), pairs)
+        @test length(unique(slots)) == length(slots)
+    end
 
     rec_spk = Ephemerides.EphemRecordSPK(10, 20, 2, [1.0, 2.0], [1.6, 2.1])
     @test Ephemerides.initial_times(rec_spk) == [1.0, 2.0]

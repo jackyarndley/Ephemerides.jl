@@ -4,9 +4,9 @@
 ## Kernels Loading and Inspection Functions
 
 ```@docs
-EphemerisProvider 
-Ephemerides.EphemRecordSPK 
-Ephemerides.EphemRecordPCK 
+EphemerisProvider
+Ephemerides.EphemRecordSPK
+Ephemerides.EphemRecordPCK
 
 ephem_timescale_id
 
@@ -23,6 +23,7 @@ ephem_get_axes
 ## Computing Positions
 
 ```@docs
+prepare_ephemeris
 ephem_vector3
 ephem_vector6
 ephem_vector9
@@ -32,6 +33,7 @@ ephem_vector12
 ## Computing Orientation
 
 ```@docs
+prepare_orientation
 ephem_rotation3
 ephem_rotation6
 ephem_rotation9

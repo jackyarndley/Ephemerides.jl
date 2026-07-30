@@ -1,69 +1,69 @@
 
 """
-    FTPSTR 
+    FTPSTR
 
-Validation string that guarantees the integrity of a DAF file. 
+Validation string that guarantees the integrity of a DAF file.
 
-### References 
+### References
 - [DAF Required Reading](https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/C/req/daf.html)
 """
 const FTPSTR = "FTPSTR:\r:\n:\r\n:\r\x00:\x81:\x10\xce:ENDFTP";
 
 
 """
-    DAFHeader 
+    DAFHeader
 
-The DAF header, or file record, is the first physical record in a DAF and stores general 
-information about the content of the file. 
+The DAF header, or file record, is the first physical record in a DAF and stores general
+information about the content of the file.
 
-### Fields 
+### Fields
 - `nd` -- `Int32` number of double components in each array summary
 - `ni` -- `Int32` number of integer components in each array summary
 - `fwd` -- `Int32` record number of initial summary record
 - `bwd` -- `Int32` record number of final summary record
-- `ffa` -- `Int32` first free address of the file 
+- `ffa` -- `Int32` first free address of the file
 - `name` -- `String` internal name of the file
-- `lend` -- `Bool` true if the file was generated in little endian 
+- `lend` -- `Bool` true if the file was generated in little endian
 
-### References 
+### References
 - [DAF Required Reading](https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/C/req/daf.html)
 
-### See Also 
+### See Also
 See also [`DAF`](@ref) and [`EphemerisProvider`](@ref)
 """
 struct DAFHeader
-    nd::Int       
-    ni::Int       
-    fwd::Int      
-    bwd::Int      
-    ffa::Int      
-    name::String    
-    lend::Bool      
+    nd::Int
+    ni::Int
+    fwd::Int
+    bwd::Int
+    ffa::Int
+    name::String
+    lend::Bool
 end
 
 """
     DAFHeader(record::Vector{UInt8})
 
-Parse the header (file record) of the DAF file, i.e., the first physical record in a DAF 
+Parse the header (file record) of the DAF file, i.e., the first physical record in a DAF
 which contains global information about the file.
 
-### References 
+### References
 - [DAF Required Reading](https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/C/req/daf.html)
 
-### See Also 
+### See Also
 See also [`DAF`](@ref), [`parse_daf_comment`](@ref) and [`parse_daf_summaries`](@ref)
 """
 function DAFHeader(record::Vector{UInt8})
 
-    # Check FTP validation string 
+    # Check FTP validation string
     ftpval = get_string(record, 699, 28)
     if ftpval != FTPSTR
         throw(ArgumentError("The DAF FTP validation string is not valid.\n"))
-    end 
+    end
 
-    # Get spk endiannes 
+    # Get spk endiannes
     lend = is_little_endian(record)
-    
+
     # Internal name/description of the file
     name = get_string(record, 16, 60)
 
@@ -77,7 +77,7 @@ function DAFHeader(record::Vector{UInt8})
 
     # First free address in the file if you need to write something!
     ffa = get_int(record, 84, lend)
-    
+
     DAFHeader(nd, ni, fwd, bwd, ffa, name, lend)
 
 end
@@ -85,21 +85,21 @@ end
 """
     initial_record(head::DAFHeader)
 
-Return the record number of the initial summary record in the DAF 
+Return the record number of the initial summary record in the DAF
 """
 @inline initial_record(head::DAFHeader) = head.fwd
 
 """
     final_record(head::DAFHeader)
 
-Return the record number of the final summary record in the DAF 
+Return the record number of the final summary record in the DAF
 """
 @inline final_record(head::DAFHeader) = head.bwd
 
 """
     free_address(head::DAFHeader)
 
-Return the first free address in the file, i.e., the address at which the first element of 
+Return the first free address in the file, i.e., the address at which the first element of
 the next array is to be added.
 """
 @inline free_address(head::DAFHeader) = head.ffa
@@ -123,7 +123,7 @@ Return the internal description of the DAF.
 
 Compute the size of a single summary record of a DAF file, in bytes.
 """
-@inline summary_size(head::DAFHeader) = 8*(head.nd + (head.ni + 1) ÷ 2)
+@inline summary_size(head::DAFHeader) = 8*(head.nd + div(head.ni + 1, 2))
 
 
 """
@@ -131,7 +131,7 @@ Compute the size of a single summary record of a DAF file, in bytes.
 
 A container object to store both SPK and PCK descriptors information.
 
-### Fields 
+### Fields
 - `segtype` -- `Int32` SPK/PCK segment type
 - `tstart` -- `Float64` initial segment type, in TDB seconds since J2000.0
 - `tend` -- `Float64` final segment type, in TDB seconds since J2000.0
@@ -141,22 +141,22 @@ A container object to store both SPK and PCK descriptors information.
 - `iaa` -- `Int32` initial array address
 - `faa` -- `Int32` final array address
 
-### References 
+### References
 - [SPK Required Reading](https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/C/req/spk.html)
 - [PCK Required Reading](https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/C/req/pck.html)
 """
 struct DAFSegmentDescriptor
-    segtype::Int       
-    tstart::Float64      
-    tend::Float64       
-    tid::Int           
-    cid::Int          
-    axesid::Int       
-    iaa::Int          
-    faa::Int          
+    segtype::Int
+    tstart::Float64
+    tend::Float64
+    tid::Int
+    cid::Int
+    axesid::Int
+    iaa::Int
+    faa::Int
 end
 
-""" 
+"""
     DAFSegmentDescriptor(summary::Vector{UInt8}, head::DAFHeader, isspk::Bool)
 
 Generate an SPK or PCK descriptor by parsing a DAF summary.
@@ -164,7 +164,7 @@ Generate an SPK or PCK descriptor by parsing a DAF summary.
 function DAFSegmentDescriptor(summary::Vector{UInt8}, head::DAFHeader, isspk::Bool)
     if isspk
         parse_spk_segment_descriptor(summary, endian(head))
-    else 
+    else
         parse_pck_segment_descriptor(summary, endian(head))
     end
 end
@@ -179,7 +179,7 @@ Return the SPK/PCK segment type.
 """
     initial_time(desc::DAFSegmentDescriptor)
 
-Return the initial epoch of the interval for which ephemeris data are contained in the 
+Return the initial epoch of the interval for which ephemeris data are contained in the
 segment, in seconds since J2000.0
 """
 @inline initial_time(desc::DAFSegmentDescriptor) = desc.tstart
@@ -187,7 +187,7 @@ segment, in seconds since J2000.0
 """
     final_time(desc::DAFSegmentDescriptor)
 
-Return the final epoch of the interval for which ephemeris data are contained in the 
+Return the final epoch of the interval for which ephemeris data are contained in the
 segment, in seconds since J2000.0
 """
 @inline final_time(desc::DAFSegmentDescriptor) = desc.tend
@@ -209,8 +209,8 @@ Return the NAIF integer code for the target object or axes for SPK and PCK, resp
 """
     axes(desc::DAFSegmentDescriptor)
 
-Return the NAIF integer code for the reference axes. It is valid only for SPK files and 
-defaults to -1 for PCKs. 
+Return the NAIF integer code for the reference axes. It is valid only for SPK files and
+defaults to -1 for PCKs.
 """
 @inline axes(desc::DAFSegmentDescriptor) = desc.axesid
 
@@ -228,12 +228,12 @@ Return the final address of the segment array in teh DAF.
 """
 @inline final_address(desc::DAFSegmentDescriptor) = desc.faa
 
-""" 
+"""
     parse_spk_segment_descriptor(summary::Vector{UInt8}, lend::Bool)
 
 Create a [`DAFSegmentDescriptor`](@ref) object by parsing a binary SPK segment descriptor.
 
-### References 
+### References
 - [SPK Required Reading](https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/C/req/spk.html)
 """
 function parse_spk_segment_descriptor(summary::Vector{UInt8}, lend::Bool)
@@ -247,7 +247,7 @@ function parse_spk_segment_descriptor(summary::Vector{UInt8}, lend::Bool)
     cid = get_int(summary, 20, lend)
     aid = get_int(summary, 24, lend)
 
-    # Get SPK segment type 
+    # Get SPK segment type
     segtype = get_int(summary, 28, lend)
 
     # Get initial and final array adddresses
@@ -258,14 +258,14 @@ function parse_spk_segment_descriptor(summary::Vector{UInt8}, lend::Bool)
 
 end
 
-""" 
+"""
     parse_pck_segment_descriptor(summary::Vector{UInt8}, lend::Bool)
 
-Create a [`DAFSegmentDescriptor`](@ref) object by parsing a binary PCK segment descriptor. 
+Create a [`DAFSegmentDescriptor`](@ref) object by parsing a binary PCK segment descriptor.
 A default value of -1 is used to fill the reference frame field. The target and center
 fields are used for the actual target and center axes.
 
-### References 
+### References
 - [PCK Required Reading](https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/C/req/pck.html)
 """
 function parse_pck_segment_descriptor(summary::Vector{UInt8}, lend::Bool)
@@ -278,14 +278,14 @@ function parse_pck_segment_descriptor(summary::Vector{UInt8}, lend::Bool)
     tid = get_int(summary, 16, lend)
     cid = get_int(summary, 20, lend)
 
-    # Get PCK segment type 
+    # Get PCK segment type
     segtype = get_int(summary, 24, lend)
 
     # Get initial and final array adddresses
     iaa = get_int(summary, 28, lend)
     faa = get_int(summary, 32, lend)
-    
-    # For PCK segments, the reference axis defaults to -1, whereas the center 
+
+    # For PCK segments, the reference axis defaults to -1, whereas the center
     # is the set of axis wrt which these pair is defined
     DAFSegmentDescriptor(segtype, tstart, tend, tid, cid, -1, iaa, faa)
 
@@ -293,30 +293,30 @@ end
 
 
 """
-    DAF 
+    DAF
 
-Container to hold the information of NAIF's Double precision Array File (DAF). 
+Container to hold the information of NAIF's Double precision Array File (DAF).
 
-### Fields 
-- `filepath` -- `String` system filepath of the DAF 
+### Fields
+- `filepath` -- `String` system filepath of the DAF
 - `array` -- `Vector{UInt8}` binary content of the DAF
 - `header` -- `DAFHeader` file record of the DAF
-- `comment` -- `String` text within the DAF comment area 
+- `comment` -- `String` text within the DAF comment area
 - `ftype` -- `Int` file type, equals 1 for SPK and 2 for PCK
 - `desc` -- DAF PCK/SPK segment descriptors
 - `seglist` -- `SPKSegmentList` list of the SPK/PCK segments within the DAF
 
-### References 
+### References
 - [DAF Required Reading](https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/C/req/daf.html)
 
-### See Also 
+### See Also
 See also [`DAFHeader`](@ref), [`Ephemerides.SPKSegmentList`](@ref) and [`EphemerisProvider`](@ref)
 """
-struct DAF 
+struct DAF
     filepath::String
     array::Vector{UInt8}
     header::DAFHeader
-    comment::String 
+    comment::String
     ftype::Int
     desc::Vector{DAFSegmentDescriptor}
     seglist::SPKSegmentList
@@ -325,17 +325,17 @@ end
 """
     DAF(filename::String)
 
-Parse a DAF file and retrieve its content. 
+Parse a DAF file and retrieve its content.
 
 !!! note
-    This function does not initialise the segment types. That operation can be done in a 
+    This function does not initialise the segment types. That operation can be done in a
     second moment through the [`initialise_segments!`](@ref) function.
 
-!!! warning 
-    Only DAF files with identification word equal to "DAF/SPK" or "DAF/PCK" are 
+!!! warning
+    Only DAF files with identification word equal to "DAF/SPK" or "DAF/PCK" are
     accepted, otherwise an error is thrown.
 
-### See Also 
+### See Also
 See also [`initialise_segments!`](@ref).
 """
 function DAF(filename::String)
@@ -349,11 +349,11 @@ function DAF(filename::String)
 
     # Retrieve DAF identification word
     locidw = get_string(array, 0, 8)
-    if locidw == "DAF/SPK" 
-        ftype = 1 
+    if locidw == "DAF/SPK"
+        ftype = 1
     elseif locidw == "DAF/PCK"
         ftype = 2
-    else 
+    else
         throw(
             jEph.EphemerisError(
                 "Invalid ephemeris file format. Only DAF/SPK and DAF/PCK files are accepted."
@@ -372,14 +372,14 @@ function DAF(filename::String)
     desclist = DAFSegmentDescriptor[]
 
     for k in reverse(eachindex(summaries))
-        # Parse the DAF segment descriptor from the summary binary content 
+        # Parse the DAF segment descriptor from the summary binary content
         push!(desclist, DAFSegmentDescriptor(summaries[k], header, ftype == 1))
     end
-    
-    # Initialise a temporarily empty SPK segment list 
+
+    # Initialise a temporarily empty SPK segment list
     seglist = SPKSegmentList()
     DAF(filename, array, header, comment, ftype, desclist, seglist)
-    
+
 end
 
 function Base.show(io::IO, daf::DAF)
@@ -391,7 +391,7 @@ end
 """
     get_comment(daf::DAF)
 
-Return the comment written in the DAF comment section. 
+Return the comment written in the DAF comment section.
 """
 @inline comment(daf::DAF) = daf.comment
 
@@ -402,15 +402,15 @@ Return the [`DAFHeader`](@ref) header of the DAF.
 """
 @inline header(daf::DAF) = daf.header
 
-""" 
-    get_array(daf::DAF) 
+"""
+    get_array(daf::DAF)
 
 Return the byte content of the DAF file.
 """
 @inline array(daf::DAF) = daf.array
 
 """
-    get_descriptors(daf::DAF) 
+    get_descriptors(daf::DAF)
 
 Return the SPK/PCK segment descriptors contained in the DAF.
 """
@@ -425,7 +425,7 @@ Return the [`Ephemerides.SPKSegmentList`](@ref) list of segments stored in the D
 
 """
     filepath(daf::DAF)
-    
+
 Return the system path of the DAF.
 """
 @inline filepath(daf::DAF) = daf.filepath
@@ -461,7 +461,7 @@ Return the record number of the final summary record in the DAF.
 """
     free_address(daf::DAF)
 
-Return the first free address in the file, i.e., the address at which the first element of 
+Return the first free address in the file, i.e., the address at which the first element of
 the next array is to be added.
 """
 @inline free_address(daf::DAF) = free_address(header(daf))
@@ -473,35 +473,35 @@ Return `true` if the DAF is in little-endian.
 """
 @inline endian(daf::DAF) = endian(header(daf))
 
-""" 
+"""
     parse_daf_comment(array::Vector{UInt8}, header::DAFHeader)
 
 Retrieve the comment section of a binary DAF.
 
-### References 
+### References
 - [DAF Required Reading](https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/C/req/daf.html)
 
-### See Also 
+### See Also
 See also [`DAF`](@ref), [`DAFHeader`](@ref) and [`parse_daf_summaries`](@ref)
 """
 function parse_daf_comment(array::Vector{UInt8}, header::DAFHeader, fname::String)
 
-    cmt = "" 
+    cmt = ""
     @inbounds for idx = 2:initial_record(header)-1
 
-        # Get record and look for EOT byte 
+        # Get record and look for EOT byte
         record = get_record(array, idx)
         eot = findfirst(c->c==0x04, record)
-    
+
         if isnothing(eot)
-            if idx == initial_record(header)-1 
+            if idx == initial_record(header)-1
                 @debug "Could not find the EOT byte in the DAF '$fname' comment."
-            end 
-            
+            end
+
             # Remove all the null characters between two successive records
             idx = findlast(c->c!=0x00, record)
             crec = isnothing(idx) ? record[1:end] : record[1:idx]
-        else 
+        else
             crec = record[1:eot]
         end
 
@@ -512,28 +512,28 @@ function parse_daf_comment(array::Vector{UInt8}, header::DAFHeader, fname::Strin
 
     return cmt
 
-end 
+end
 
-""" 
+"""
     parse_daf_summaries(array::Vector{UInt8}, head::DAFHeader)
 
 Parse the DAF binary content and retrieve all the summary records.
 
-### References 
+### References
 - [DAF Required Reading](https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/C/req/daf.html)
 
-### See Also 
+### See Also
 See also [`DAF`](@ref), [`DAFHeader`](@ref) and [`parse_daf_comment`](@ref)
 """
 function parse_daf_summaries(array::Vector{UInt8}, head::DAFHeader)
 
-    # This function neglects the summaries record names! 
+    # This function neglects the summaries record names!
     summaries = Vector{UInt8}[]
     nc = summary_size(head)
 
     # Keep parsing summaries until next != 0
-    next = Int(initial_record(head)) 
-    while next != 0 
+    next = Int(initial_record(head))
+    while next != 0
 
         record = get_record(array, next)
 
@@ -542,7 +542,7 @@ function parse_daf_summaries(array::Vector{UInt8}, head::DAFHeader)
         nsum = Int(get_float(record, 16, endian(head)))
 
         # update summaries with all those found in record
-        for j = 1:nsum 
+        for j = 1:nsum
             push!(summaries, record[25+(j-1)*nc:24+j*nc])
         end
 
@@ -556,17 +556,17 @@ end
 """
     initialise_segments!(daf::DAF)
 
-Fill the [`Ephemerides.SPKSegmentList`](@ref) by initialising the SPK/PCK segments associated to all 
+Fill the [`Ephemerides.SPKSegmentList`](@ref) by initialising the SPK/PCK segments associated to all
 the descriptors stores within the DAF.
 
-### See Also 
+### See Also
 See also [`DAF`](@ref) and [`create_spk_segment`](@ref)
 """
 function initialise_segments!(daf::DAF)
 
     for desc in descriptors(daf)
         # Create the SPK segment type associated to the above descriptor
-        add_segment!(segment_list(daf), create_spk_segment(daf, desc)) 
+        add_segment!(segment_list(daf), create_spk_segment(daf, desc))
     end
 
     nothing
@@ -575,16 +575,16 @@ end
 """
     create_spk_segment(daf::DAF, desc::DAFSegmentDescriptor)
 
-Initialise an SPK segment according to the segment type defined in the 
+Initialise an SPK segment according to the segment type defined in the
 [`DAFSegmentDescriptor`](@ref) `desc`.
 """
 function create_spk_segment(daf::DAF, desc::DAFSegmentDescriptor)
-    
+
     if !(segment_type(desc) in keys(SPK_SEGMENTLIST_MAPPING))
         throw(jEph.EphemerisError(
             "unsupported SPK segment type $(segment_type(desc)) found in $(filepath(daf))."
         ))
-    end 
+    end
 
     mapped_spktype = SPK_SEGMENTLIST_MAPPING[segment_type(desc)]
     if mapped_spktype == 1
@@ -593,16 +593,16 @@ function create_spk_segment(daf::DAF, desc::DAFSegmentDescriptor)
     elseif mapped_spktype == 2
         SPKSegmentType9(daf, desc)
 
-    elseif mapped_spktype == 3 
+    elseif mapped_spktype == 3
         SPKSegmentType1(daf, desc)
 
-    elseif mapped_spktype == 4 
+    elseif mapped_spktype == 4
         SPKSegmentType14(daf, desc)
 
     elseif mapped_spktype == 5
         SPKSegmentType15(daf, desc)
 
-    elseif mapped_spktype == 6 
+    elseif mapped_spktype == 6
         SPKSegmentType8(daf, desc)
 
     elseif mapped_spktype == 7
@@ -610,14 +610,14 @@ function create_spk_segment(daf::DAF, desc::DAFSegmentDescriptor)
 
     elseif mapped_spktype == 8
         SPKSegmentType20(daf, desc)
-        
+
     elseif mapped_spktype == 9
         SPKSegmentType5(daf, desc)
-        
-    else 
+
+    else
         SPKSegmentType17(daf, desc)
     end
-    
+
 end
 
 

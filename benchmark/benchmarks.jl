@@ -11,10 +11,21 @@ function build_benchmark_suite()
     random_position_times = shuffled_copy(position_times)
     rotation_times = benchmark_rotation_times()
     random_rotation_times = shuffled_copy(rotation_times)
+    earth_route = prepare_ephemeris(
+        eph, 3, 399; timespan=extrema(position_times)
+    )
+    third_body_routes = map(
+        pair -> prepare_ephemeris(eph, pair...; timespan=extrema(position_times)),
+        POSITION_PAIRS,
+    )
+    pa440_route = prepare_orientation(
+        eph, 1, PA440_AXES_ID; timespan=extrema(rotation_times)
+    )
 
     suite = BenchmarkGroup()
     suite["load"] = BenchmarkGroup()
     suite["queries"] = BenchmarkGroup()
+    suite["prepared"] = BenchmarkGroup()
     suite["positions"] = BenchmarkGroup()
     suite["rotations"] = BenchmarkGroup()
 
@@ -32,6 +43,18 @@ function build_benchmark_suite()
         @benchmarkable ephem_rotation3($eph, 1, $PA440_AXES_ID, $t0)
     suite["queries"]["ephem_rotation6(1, PA440, t0)"] =
         @benchmarkable ephem_rotation6($eph, 1, $PA440_AXES_ID, $t0)
+
+    suite["prepared"]["ephem_vector3(earth_route, t0)"] =
+        @benchmarkable ephem_vector3($earth_route, $t0)
+    suite["prepared"]["ephem_rotation3(pa440_route, t0)"] =
+        @benchmarkable ephem_rotation3($pa440_route, $t0)
+    suite["prepared"]["third-body-position-sweep"] = @benchmarkable begin
+        acc = 0.0
+        for t in $position_times
+            acc += sum(state -> state[1], ephem_vector3($third_body_routes, t))
+        end
+        acc
+    end
 
     suite["positions"]["sequential-earth-track"] = @benchmarkable begin
         acc = 0.0

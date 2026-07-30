@@ -19,6 +19,7 @@ end;
     include("spk/spk.jl")
     include("properties.jl")
     include("interfaces.jl")
+    include("ad.jl")
     include("twobody.jl")
     include("utils.jl")
 end;

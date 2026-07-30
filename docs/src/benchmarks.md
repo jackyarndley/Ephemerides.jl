@@ -10,6 +10,13 @@ From the repository root:
 julia --startup-file=no benchmark\runbenchmarks.jl
 ```
 
+For analytic, forward-mode, finite-difference, reverse-mode, and ChainRules derivative
+comparisons:
+
+```julia
+julia --startup-file=no benchmark\runadbenchmarks.jl
+```
+
 For CPU profiling of broader sweeps:
 
 ```julia
@@ -33,6 +40,10 @@ The default suite covers:
 3. Sequential and shuffled Earth-track sweeps to expose cache-friendly and cache-unfriendly access patterns.
 4. A broader multi-body DE440 position sweep.
 5. Sequential, shuffled, and derivative PA440 orientation sweeps using `moon_pa_de440_200625.bpc` (axes `31008`).
+6. Prepared point/orientation calls and a repeated multi-body sweep representative of
+   third-body perturbation force models.
+7. DerivativeInterface backends, direct analytic state derivatives, ChainRules pullbacks,
+   and batched third-body derivatives.
 
 Benchmark results are saved to `benchmark\results\latest.json`, and flat CPU profile reports are written under `profiling\results\`.
 

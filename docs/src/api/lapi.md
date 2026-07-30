@@ -1,35 +1,39 @@
 # [Low-level API](@id ephemerides_api)
 
-These functions are not meant to be used outside of the package. They are documented 
+These functions are not meant to be used outside of the package. They are documented
 only to aid future developments of the package.
 
-## Ephemeris Provider 
+## Ephemeris Provider
 
 ```@docs
-Ephemerides.get_daf 
-Ephemerides.spk_links 
+Ephemerides.get_daf
+Ephemerides.spk_links
 Ephemerides.pck_links
+Ephemerides.DirectEphemerisRoute
+Ephemerides.CompositeEphemerisRoute
+Ephemerides.DirectOrientationRoute
+Ephemerides.CompositeOrientationRoute
 ```
 
-## DAF Routines 
+## DAF Routines
 
 ### DAF Header
-```@docs 
-Ephemerides.DAFHeader 
+```@docs
+Ephemerides.DAFHeader
 
-Ephemerides.initial_record 
-Ephemerides.final_record 
+Ephemerides.initial_record
+Ephemerides.final_record
 Ephemerides.free_address
-Ephemerides.endian 
-Ephemerides.filename 
+Ephemerides.endian
+Ephemerides.filename
 Ephemerides.summary_size
 ```
 
-### DAF Descriptor 
+### DAF Descriptor
 ```@docs
-Ephemerides.DAFSegmentDescriptor 
+Ephemerides.DAFSegmentDescriptor
 
-Ephemerides.segment_type 
+Ephemerides.segment_type
 Ephemerides.initial_time
 Ephemerides.final_time
 Ephemerides.center
@@ -44,7 +48,7 @@ Ephemerides.parse_spk_segment_descriptor
 Ephemerides.parse_pck_segment_descriptor
 ```
 
-### DAF 
+### DAF
 
 ```@docs
 Ephemerides.DAF
@@ -68,14 +72,17 @@ Ephemerides.create_spk_segment
 
 Ephemerides.get_record
 Ephemerides.is_little_endian
+Ephemerides.read_doubles_rowmajor!
 ```
 
-## SPK Links 
-```@docs 
-Ephemerides.SPKLink 
+## SPK Links
+```@docs
+Ephemerides.SPKLink
 Ephemerides.SPKLinkTable
+Ephemerides.FlatLinkTable
+Ephemerides.RouteCache
 
-Ephemerides.descriptor 
+Ephemerides.descriptor
 Ephemerides.file_id
 Ephemerides.list_id
 Ephemerides.element_id
@@ -83,12 +90,13 @@ Ephemerides.factor
 Ephemerides.reverse_link
 Ephemerides.create_linktables
 Ephemerides.add_spklinks!
+Ephemerides.flatten_linktable
 ```
 
-## SPK Segment List 
-```@docs 
-Ephemerides.SPKSegmentList 
-Ephemerides.add_segment! 
+## SPK Segment List
+```@docs
+Ephemerides.SPKSegmentList
+Ephemerides.add_segment!
 Ephemerides.get_segment
 
 Ephemerides.SPK_SEGMENTLIST_MAPPING
@@ -96,44 +104,45 @@ Ephemerides.TCB_SEGMENTS
 Ephemerides.TDB_SEGMENTS
 ```
 
-## SPK Segment Types 
+## SPK Segment Types
 
-### Abstract SPK Types 
-```@docs 
-Ephemerides.AbstractSPKHeader 
-Ephemerides.AbstractSPKCache 
+### Abstract SPK Types
+```@docs
+Ephemerides.AbstractSPKHeader
+Ephemerides.AbstractSPKCache
 Ephemerides.AbstractSPKSegment
 
-Ephemerides.cache 
+Ephemerides.cache
 Ephemerides.spk_field
 ```
 
 ### SPK Type 1 and 21
-```@docs 
+```@docs
 Ephemerides.SPKSegmentHeader1
-Ephemerides.SPKSegmentCache1 
+Ephemerides.SPKSegmentCache1
 Ephemerides.SPKSegmentType1
 
-Ephemerides.compute_mda_position 
+Ephemerides.compute_mda_position
 Ephemerides.compute_mda_velocity
+Ephemerides.validate_mda_record
 ```
 
 ### SPK Type 2 and 3
-```@docs 
+```@docs
 Ephemerides.SPKSegmentHeader2
 Ephemerides.SPKSegmentCache2
 Ephemerides.SPKSegmentType2
 ```
 
 ### SPK Type 5
-```@docs 
+```@docs
 Ephemerides.SPKSegmentHeader5
 Ephemerides.SPKSegmentCache5
 Ephemerides.SPKSegmentType5
 ```
 
 ### SPK Type 8 and 12
-```@docs 
+```@docs
 Ephemerides.SPKSegmentHeader8
 Ephemerides.SPKSegmentCache8
 Ephemerides.SPKSegmentType8
@@ -152,7 +161,7 @@ Ephemerides.SPKSegmentHeader14
 Ephemerides.SPKSegmentType14
 ```
 
-!!! note 
+!!! note
     SPK segments of type 14 have the same cache structure of SPK type 2 and 3.
 
 
@@ -162,7 +171,7 @@ Ephemerides.SPKSegmentHeader15
 Ephemerides.SPKSegmentType15
 ```
 
-!!! note 
+!!! note
     The cache of SPK Type 15 segments is made of [`Ephemerides.TwoBodyUniversalCache`](@ref) objects.
 
 
@@ -172,7 +181,7 @@ Ephemerides.SPKSegmentHeader17
 Ephemerides.SPKSegmentType17
 ```
 
-!!! note 
+!!! note
     SPK segments of type 17 do not require a cache structure.
 
 
@@ -192,70 +201,70 @@ Ephemerides.find_minisegment
 Ephemerides.load_minisegment!
 ```
 
-!!! note 
+!!! note
     SPK segments of type 18 are the only ones that do not posses a dedicated SPK segment type structure, because they are treated as special cases (i.e., single minisegments) of the type 19.
 
 ### SPK Type 20
-```@docs 
+```@docs
 Ephemerides.SPKSegmentHeader20
 Ephemerides.SPKSegmentCache20
 Ephemerides.SPKSegmentType20
 ```
 
-### SPK Utility Functions 
-```@docs 
+### SPK Utility Functions
+```@docs
 Ephemerides.normalise_time
-Ephemerides.find_logical_record 
+Ephemerides.find_logical_record
 Ephemerides.get_coefficients!
 ```
 
 ## Interpolating Functions
 
-### Caches 
-```@docs 
-Ephemerides.InterpCache 
+### Caches
+```@docs
+Ephemerides.InterpCache
 Ephemerides.get_buffer
 ```
 
-### Chebyshev Polynomials 
+### Chebyshev Polynomials
 
 ```@docs
 Ephemerides.chebyshev
-Ephemerides.∂chebyshev
-Ephemerides.∂²chebyshev
-Ephemerides.∂³chebyshev
-Ephemerides.∫chebyshev
+Ephemerides.chebyshev_derivative1
+Ephemerides.chebyshev_derivative2
+Ephemerides.chebyshev_derivative3
+Ephemerides.chebyshev_integral
 ```
 
-### Lagrange Polynomials 
+### Lagrange Polynomials
 
-```@docs 
+```@docs
 Ephemerides.lagrange
-Ephemerides.∂lagrange
-Ephemerides.∂²lagrange
+Ephemerides.lagrange_derivative1
+Ephemerides.lagrange_derivative2
 ```
 
-### Hermite Polynomials 
+### Hermite Polynomials
 
-```@docs 
+```@docs
 Ephemerides.hermite
-Ephemerides.∂hermite
-Ephemerides.∂²hermite
-Ephemerides.∂³hermite
+Ephemerides.hermite_derivative1
+Ephemerides.hermite_derivative2
+Ephemerides.hermite_derivative3
 ```
 
-## Introspection 
-```@docs 
+## Introspection
+```@docs
 Ephemerides.AbstractEphemRecord
 Ephemerides.initial_times
 Ephemerides.final_times
 
-Ephemerides.analyse_timespan 
+Ephemerides.analyse_timespan
 ```
 
-## TwoBody Routines 
-```@docs 
-Ephemerides.TwoBodyUniversalCache 
+## TwoBody Routines
+```@docs
+Ephemerides.TwoBodyUniversalCache
 Ephemerides.update_cache!
 Ephemerides.propagate_twobody
 Ephemerides.stumpff
